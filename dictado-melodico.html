@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dictado melódico — Tonalidad mayor</title>
+  <style>
+    :root {
+      --bg: #1a1f2e;
+      --panel: #242b3d;
+      --text: #e8ecf4;
+      --muted: #9aa3b5;
+      --accent: #3d9a7a;
+      --accent-hover: #4db892;
+      --border: #3a4258;
+      --danger: #c45c5c;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(ellipse at top, #2a3348 0%, var(--bg) 55%);
+      color: var(--text);
+      padding: 2rem 1.25rem 3rem;
+    }
+
+    .wrap {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 650;
+      margin: 0 0 0.35rem;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin: 0 0 1.75rem;
+      font-size: 0.95rem;
+    }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.35rem;
+      margin-bottom: 1rem;
+    }
+
+    label.field {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+
+    select, input[type="number"] {
+      width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.55rem 0.7rem;
+      font-size: 1rem;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 520px) {
+      .row { grid-template-columns: 1fr; }
+    }
+
+    .notes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .note-item {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.35rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.45rem 0.5rem 0.4rem;
+      min-width: 4.5rem;
+    }
+
+    .note-item:has(input:checked) {
+      border-color: var(--accent);
+      background: rgba(61, 154, 122, 0.15);
+    }
+
+    .note-item label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      cursor: pointer;
+      user-select: none;
+      font-size: 0.95rem;
+    }
+
+    .notes input { accent-color: var(--accent); }
+
+    .note-item.octava-baja {
+      opacity: 0.92;
+    }
+
+    .note-item.octava-alta {
+      border-style: dashed;
+    }
+
+    .note-play {
+      padding: 0.25rem 0.4rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 6px;
+      line-height: 1.2;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 0.25rem;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 0.65rem 1.1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+    }
+
+    button:hover:not(:disabled) { background: var(--accent-hover); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    button.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    button.secondary:hover:not(:disabled) {
+      border-color: var(--muted);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .answer {
+      min-height: 3rem;
+      font-size: 1.35rem;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }
+
+    .answer.hidden { color: var(--muted); font-size: 0.95rem; font-weight: 400; letter-spacing: 0; }
+
+    .hint {
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .status { color: var(--accent); font-size: 0.9rem; min-height: 1.25rem; }
+
+    .tonica-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 0.6rem;
+      align-items: end;
+    }
+
+    .tonica-row .field-inline {
+      margin: 0;
+    }
+
+    .tonica-row button {
+      white-space: nowrap;
+      align-self: stretch;
+    }
+
+    .hold-btn {
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .hold-btn:active {
+      background: rgba(61, 154, 122, 0.25);
+      border-color: var(--accent);
+    }
+
+    @media (max-width: 520px) {
+      .tonica-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Dictado melódico</h1>
+    <p class="subtitle">Tonalidad mayor · solo negras · práctica auditiva</p>
+
+    <section>
+      <div class="tonica-row">
+        <div>
+          <label class="field field-inline" for="tonica">Tónica</label>
+          <select id="tonica"></select>
+        </div>
+        <div>
+          <label class="field field-inline" for="instrumento">Sonido</label>
+          <select id="instrumento"></select>
+        </div>
+        <button id="btnTonica" class="secondary hold-btn" type="button" title="Mantené apretado para escuchar">Escuchar tónica</button>
+      </div>
+      <p class="hint">Elegí la tónica y el timbre. Mantené apretado “Escuchar tónica” para oírla; al soltar se apaga.</p>
+    </section>
+
+    <section>
+      <label class="field">Notas disponibles para el dictado</label>
+      <div class="notes" id="notas"></div>
+      <p class="hint">Tres octavas: grave con ˌ (Doˌ), media sin marca, aguda con ′ (Do′).</p>
+    </section>
+
+    <section>
+      <div class="row">
+        <div>
+          <label class="field" for="tempo">Tempo (BPM)</label>
+          <input id="tempo" type="number" min="40" max="200" value="80" />
+        </div>
+        <div>
+          <label class="field" for="cantidad">Cantidad de notas</label>
+          <input id="cantidad" type="number" min="1" max="32" value="4" />
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="actions">
+        <button id="btnGenerar" type="button">Nuevo dictado</button>
+        <button id="btnPlay" class="secondary" type="button" disabled>Reproducir</button>
+        <button id="btnRevelar" class="secondary" type="button" disabled>Revelar</button>
+      </div>
+      <p class="status" id="status"></p>
+      <div class="answer hidden" id="respuesta">Generá un dictado para empezar.</div>
+    </section>
+  </div>
+
+  <script>
+    const NOMBRES = ["Do", "Re", "Mi", "Fa", "Sol", "La", "Si"];
+    // Semitonos desde Do (C4 = 261.63 Hz como referencia)
+    const SEMITONOS_NOMBRE = { Do: 0, Re: 2, Mi: 4, Fa: 5, Sol: 7, La: 9, Si: 11 };
+    // Grados de una octava mayor (semitonos desde la tónica)
+    const GRADOS_MAYOR = [0, 2, 4, 5, 7, 9, 11];
+    const OCTAVAS = 3;
+    const TOTAL_NOTAS = NOMBRES.length * OCTAVAS; // 21 notas
+    const OCTAVA_MEDIA = 1; // índice de octava “central” (C4)
+
+    const A4 = 440;
+    const MIDI_A4 = 69;
+
+    // Perfiles de timbre (síntesis Web Audio, no samples)
+    const INSTRUMENTOS = {
+      piano: {
+        label: "Piano",
+        attack: 0.035,
+        peak: 0.42,
+        sustainRatio: 0.55,
+        ringMult: 1.4,
+        minRing: 0.9,
+        filterQ: 0.8,
+        filterStart: (f) => Math.min(f * 8, 4200),
+        filterEnd: (f) => Math.min(f * 4, 2200),
+        parciales: [
+          [1, 1.0, "triangle"],
+          [2, 0.38, "sine"],
+          [3, 0.18, "sine"],
+          [4, 0.09, "sine"],
+          [5, 0.045, "sine"],
+          [6, 0.02, "sine"],
+        ],
+        vibrato: null,
+      },
+      violin: {
+        label: "Violín",
+        attack: 0.14,
+        peak: 0.28,
+        sustainRatio: 0.9,
+        ringMult: 1.05,
+        minRing: 0.85,
+        filterQ: 1.1,
+        filterStart: (f) => Math.min(f * 5.5, 3200),
+        filterEnd: (f) => Math.min(f * 5, 2800),
+        parciales: [
+          [1, 0.55, "sawtooth"],
+          [2, 0.35, "sine"],
+          [3, 0.2, "sine"],
+          [4, 0.1, "sine"],
+          [5, 0.05, "sine"],
+        ],
+        vibrato: { rate: 5.2, depth: 9 },
+      },
+      flauta: {
+        label: "Flauta",
+        attack: 0.08,
+        peak: 0.36,
+        sustainRatio: 0.75,
+        ringMult: 1.1,
+        minRing: 0.8,
+        filterQ: 0.4,
+        filterStart: (f) => Math.min(f * 3.2, 2400),
+        filterEnd: (f) => Math.min(f * 2.6, 1800),
+        parciales: [
+          [1, 1.0, "sine"],
+          [2, 0.22, "sine"],
+          [3, 0.06, "sine"],
+        ],
+        vibrato: { rate: 4.5, depth: 4 },
+      },
+      organo: {
+        label: "Órgano",
+        attack: 0.02,
+        peak: 0.3,
+        sustainRatio: 0.95,
+        ringMult: 1.0,
+        minRing: 0.75,
+        filterQ: 0.5,
+        filterStart: (f) => Math.min(f * 6, 4000),
+        filterEnd: (f) => Math.min(f * 6, 4000),
+        parciales: [
+          [1, 0.7, "sine"],
+          [2, 0.55, "sine"],
+          [3, 0.35, "sine"],
+          [4, 0.25, "sine"],
+          [6, 0.15, "sine"],
+          [8, 0.1, "sine"],
+        ],
+        vibrato: null,
+      },
+      guitarra: {
+        label: "Guitarra",
+        attack: 0.012,
+        peak: 0.4,
+        sustainRatio: 0.35,
+        ringMult: 1.6,
+        minRing: 1.0,
+        filterQ: 1.0,
+        filterStart: (f) => Math.min(f * 7, 3800),
+        filterEnd: (f) => Math.min(f * 2.5, 1600),
+        parciales: [
+          [1, 1.0, "triangle"],
+          [2, 0.45, "sine"],
+          [3, 0.25, "sine"],
+          [4, 0.12, "sine"],
+          [5, 0.06, "sine"],
+        ],
+        vibrato: null,
+      },
+      clarinete: {
+        label: "Clarinete",
+        attack: 0.06,
+        peak: 0.32,
+        sustainRatio: 0.8,
+        ringMult: 1.1,
+        minRing: 0.8,
+        filterQ: 0.7,
+        filterStart: (f) => Math.min(f * 4.5, 2800),
+        filterEnd: (f) => Math.min(f * 3.5, 2200),
+        // Clarinete: armónicos impares
+        parciales: [
+          [1, 1.0, "sine"],
+          [3, 0.45, "sine"],
+          [5, 0.22, "sine"],
+          [7, 0.1, "sine"],
+          [9, 0.04, "sine"],
+        ],
+        vibrato: null,
+      },
+    };
+
+    let audioCtx = null;
+    let masterGain = null;
+    let masterFilter = null;
+    let dictadoActual = []; // índices 0..20 (tres octavas)
+    let reproduciendo = false;
+    let notaSostenida = null; // voz activa mientras se mantiene el botón
+
+    const elTonica = document.getElementById("tonica");
+    const elInstrumento = document.getElementById("instrumento");
+    const elNotas = document.getElementById("notas");
+    const elTempo = document.getElementById("tempo");
+    const elCantidad = document.getElementById("cantidad");
+    const elStatus = document.getElementById("status");
+    const elRespuesta = document.getElementById("respuesta");
+    const btnTonica = document.getElementById("btnTonica");
+    const btnGenerar = document.getElementById("btnGenerar");
+    const btnPlay = document.getElementById("btnPlay");
+    const btnRevelar = document.getElementById("btnRevelar");
+
+    function instrumentoActual() {
+      return INSTRUMENTOS[elInstrumento.value] || INSTRUMENTOS.piano;
+    }
+
+    function initUI() {
+      NOMBRES.forEach((n) => {
+        const opt = document.createElement("option");
+        opt.value = n;
+        opt.textContent = n;
+        elTonica.appendChild(opt);
+      });
+      elTonica.value = "Do";
+
+      Object.entries(INSTRUMENTOS).forEach(([id, inst]) => {
+        const opt = document.createElement("option");
+        opt.value = id;
+        opt.textContent = inst.label;
+        elInstrumento.appendChild(opt);
+      });
+      elInstrumento.value = "piano";
+
+      for (let i = 0; i < TOTAL_NOTAS; i++) {
+        const item = document.createElement("div");
+        item.className = "note-item";
+        const octava = Math.floor(i / 7);
+        if (octava === 0) item.classList.add("octava-baja");
+        if (octava === 2) item.classList.add("octava-alta");
+
+        const lab = document.createElement("label");
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.value = String(i);
+        // Por defecto: I, III, V de la octava media
+        const baseMedia = OCTAVA_MEDIA * 7;
+        cb.checked = i === baseMedia || i === baseMedia + 2 || i === baseMedia + 4;
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "note-name";
+        nameSpan.textContent = NOMBRES[i % 7];
+
+        lab.appendChild(cb);
+        lab.appendChild(nameSpan);
+
+        const playBtn = document.createElement("button");
+        playBtn.type = "button";
+        playBtn.className = "secondary note-play";
+        playBtn.dataset.grado = String(i);
+        playBtn.textContent = "▶ Oír";
+        playBtn.title = "Reproducir esta nota";
+        playBtn.addEventListener("click", () => escucharGrado(i));
+
+        item.appendChild(lab);
+        item.appendChild(playBtn);
+        elNotas.appendChild(item);
+      }
+
+      actualizarEtiquetasNotas();
+      elTonica.addEventListener("change", actualizarEtiquetasNotas);
+    }
+
+    function actualizarEtiquetasNotas() {
+      const tonicIdx = NOMBRES.indexOf(elTonica.value);
+      const names = elNotas.querySelectorAll(".note-name");
+      names.forEach((span, grado) => {
+        span.textContent = nombreAbsoluto(tonicIdx, grado);
+      });
+    }
+
+    function escucharGrado(grado) {
+      const ctx = ensureAudio();
+      const freq = freqDeMidi(midiDeGrado(elTonica.value, grado));
+      tocarNota(freq, ctx.currentTime + 0.02, 1.0);
+    }
+
+    function semitonosDesdeTonica(grado) {
+      const octava = Math.floor(grado / 7);
+      const gradoEnOctava = grado % 7;
+      // Octava media (índice 1) = C4; la nueva octava queda por debajo
+      return GRADOS_MAYOR[gradoEnOctava] + (octava - OCTAVA_MEDIA) * 12;
+    }
+
+    function nombreAbsoluto(tonicIdx, grado) {
+      const gradoEnOctava = grado % 7;
+      const octava = Math.floor(grado / 7);
+      const tonicSemi = SEMITONOS_NOMBRE[NOMBRES[tonicIdx]];
+      const semi = (tonicSemi + GRADOS_MAYOR[gradoEnOctava]) % 12;
+      const entry = Object.entries(SEMITONOS_NOMBRE).find(([, s]) => s === semi);
+      const base = entry ? entry[0] : "?";
+      if (octava === 0) return base + "ˌ"; // octava grave
+      if (octava === 2) return base + "′"; // octava aguda
+      return base;
+    }
+
+    function gradosSeleccionados() {
+      return [...elNotas.querySelectorAll("input:checked")].map((cb) => Number(cb.value));
+    }
+
+    function midiDeGrado(tonicNombre, grado) {
+      // Tónica en octava 4 (C4=60)
+      const baseMidi = 60 + SEMITONOS_NOMBRE[tonicNombre];
+      return baseMidi + semitonosDesdeTonica(grado);
+    }
+
+    function freqDeMidi(midi) {
+      return A4 * Math.pow(2, (midi - MIDI_A4) / 12);
+    }
+
+    function ensureAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = 0.7;
+        masterFilter = audioCtx.createBiquadFilter();
+        masterFilter.type = "lowpass";
+        masterFilter.frequency.value = 3800;
+        masterFilter.Q.value = 0.5;
+        masterGain.connect(masterFilter);
+        masterFilter.connect(audioCtx.destination);
+      }
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      return audioCtx;
+    }
+
+    // Nota según el instrumento seleccionado (duración fija)
+    function tocarNota(freq, when, dur) {
+      const ctx = ensureAudio();
+      const inst = instrumentoActual();
+      const noteGain = ctx.createGain();
+      const noteFilter = ctx.createBiquadFilter();
+      noteFilter.type = "lowpass";
+      noteFilter.Q.value = inst.filterQ;
+      noteFilter.connect(noteGain);
+      noteGain.connect(masterGain);
+
+      const attack = inst.attack;
+      const peak = inst.peak;
+      const sustain = peak * inst.sustainRatio;
+      const ring = Math.max(dur * inst.ringMult, inst.minRing);
+      const releaseEnd = when + ring;
+      const stopAt = releaseEnd + 0.03;
+
+      noteFilter.frequency.setValueAtTime(inst.filterStart(freq), when);
+      noteFilter.frequency.exponentialRampToValueAtTime(
+        Math.max(inst.filterEnd(freq), 120),
+        when + ring * 0.65
+      );
+
+      noteGain.gain.setValueAtTime(0.0001, when);
+      noteGain.gain.linearRampToValueAtTime(peak, when + attack);
+      noteGain.gain.exponentialRampToValueAtTime(
+        Math.max(sustain, 0.001),
+        when + attack + Math.min(dur * 0.45, 0.35)
+      );
+      noteGain.gain.exponentialRampToValueAtTime(0.0001, releaseEnd);
+
+      let vibratoGain = null;
+      let lfo = null;
+      if (inst.vibrato) {
+        lfo = ctx.createOscillator();
+        vibratoGain = ctx.createGain();
+        lfo.frequency.value = inst.vibrato.rate;
+        vibratoGain.gain.value = inst.vibrato.depth;
+        lfo.connect(vibratoGain);
+        lfo.start(when);
+        lfo.stop(stopAt);
+      }
+
+      inst.parciales.forEach(([ratio, amp, type], i) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        const inharm = 1 + i * i * 0.00008;
+        osc.type = type;
+        osc.frequency.value = freq * ratio * inharm;
+
+        if (vibratoGain) vibratoGain.connect(osc.detune);
+
+        const partialLife = ring * Math.max(0.35, 1 - i * 0.1);
+        g.gain.setValueAtTime(0.0001, when);
+        g.gain.linearRampToValueAtTime(amp, when + attack + i * 0.008);
+        g.gain.exponentialRampToValueAtTime(
+          Math.max(amp * 0.4, 0.001),
+          when + partialLife * 0.5
+        );
+        g.gain.exponentialRampToValueAtTime(0.0001, when + partialLife);
+
+        osc.connect(g);
+        g.connect(noteFilter);
+        osc.start(when);
+        osc.stop(stopAt);
+      });
+    }
+
+    // Nota que suena hasta soltar (para “Escuchar tónica”)
+    function iniciarNotaSostenida(freq) {
+      soltarNotaSostenida();
+      const ctx = ensureAudio();
+      const inst = instrumentoActual();
+      const when = ctx.currentTime;
+      const noteGain = ctx.createGain();
+      const noteFilter = ctx.createBiquadFilter();
+      noteFilter.type = "lowpass";
+      noteFilter.Q.value = inst.filterQ;
+      noteFilter.connect(noteGain);
+      noteGain.connect(masterGain);
+
+      const peak = inst.peak;
+      const sustain = Math.max(peak * Math.max(inst.sustainRatio, 0.7), 0.001);
+
+      noteFilter.frequency.setValueAtTime(inst.filterStart(freq), when);
+      noteFilter.frequency.exponentialRampToValueAtTime(
+        Math.max(inst.filterEnd(freq), 120),
+        when + 0.4
+      );
+
+      noteGain.gain.setValueAtTime(0.0001, when);
+      noteGain.gain.linearRampToValueAtTime(peak, when + inst.attack);
+      noteGain.gain.exponentialRampToValueAtTime(sustain, when + inst.attack + 0.12);
+
+      const osciladores = [];
+      let vibratoGain = null;
+      let lfo = null;
+
+      if (inst.vibrato) {
+        lfo = ctx.createOscillator();
+        vibratoGain = ctx.createGain();
+        lfo.frequency.value = inst.vibrato.rate;
+        vibratoGain.gain.value = inst.vibrato.depth;
+        lfo.connect(vibratoGain);
+        lfo.start(when);
+        osciladores.push(lfo);
+      }
+
+      inst.parciales.forEach(([ratio, amp, type], i) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq * ratio * (1 + i * i * 0.00008);
+        if (vibratoGain) vibratoGain.connect(osc.detune);
+        g.gain.setValueAtTime(0.0001, when);
+        g.gain.linearRampToValueAtTime(amp, when + inst.attack + i * 0.008);
+        osc.connect(g);
+        g.connect(noteFilter);
+        osc.start(when);
+        osciladores.push(osc);
+      });
+
+      notaSostenida = { noteGain, osciladores, ctx };
+    }
+
+    function soltarNotaSostenida() {
+      if (!notaSostenida) return;
+      const { noteGain, osciladores, ctx } = notaSostenida;
+      notaSostenida = null;
+      const now = ctx.currentTime;
+      const release = 0.12;
+      try {
+        noteGain.gain.cancelScheduledValues(now);
+        noteGain.gain.setValueAtTime(Math.max(noteGain.gain.value, 0.001), now);
+        noteGain.gain.exponentialRampToValueAtTime(0.0001, now + release);
+      } catch (_) {
+        /* ignore */
+      }
+      osciladores.forEach((osc) => {
+        try {
+          osc.stop(now + release + 0.02);
+        } catch (_) {
+          /* ignore */
+        }
+      });
+    }
+
+    function onTonicaDown(e) {
+      e.preventDefault();
+      const grado = OCTAVA_MEDIA * 7;
+      const freq = freqDeMidi(midiDeGrado(elTonica.value, grado));
+      iniciarNotaSostenida(freq);
+    }
+
+    function onTonicaUp(e) {
+      e.preventDefault();
+      soltarNotaSostenida();
+    }
+
+    function generarDictado() {
+      const disponibles = gradosSeleccionados();
+      if (disponibles.length === 0) {
+        alert("Elegí al menos una nota para el dictado.");
+        return;
+      }
+      const n = Math.max(1, Math.min(32, Number(elCantidad.value) || 4));
+      elCantidad.value = n;
+
+      dictadoActual = [];
+      for (let i = 0; i < n; i++) {
+        const pick = disponibles[Math.floor(Math.random() * disponibles.length)];
+        dictadoActual.push(pick);
+      }
+
+      elRespuesta.className = "answer hidden";
+      elRespuesta.textContent = "Dictado listo. Escuchá y después revelá la respuesta.";
+      elStatus.textContent = `${n} negras · ${elTempo.value} BPM · tónica ${elTonica.value} · ${instrumentoActual().label}`;
+      btnPlay.disabled = false;
+      btnRevelar.disabled = false;
+    }
+
+    async function reproducir() {
+      if (!dictadoActual.length || reproduciendo) return;
+      reproduciendo = true;
+      btnPlay.disabled = true;
+      btnGenerar.disabled = true;
+
+      const bpm = Math.max(40, Math.min(200, Number(elTempo.value) || 80));
+      elTempo.value = bpm;
+      const beat = 60 / bpm; // duración de una negra
+      const tonica = elTonica.value;
+      const ctx = ensureAudio();
+      const t0 = ctx.currentTime + 0.08;
+
+      dictadoActual.forEach((grado, i) => {
+        const midi = midiDeGrado(tonica, grado);
+        tocarNota(freqDeMidi(midi), t0 + i * beat, beat * 0.9);
+      });
+
+      const totalMs = (dictadoActual.length * beat + 0.1) * 1000;
+      elStatus.textContent = "Reproduciendo…";
+      setTimeout(() => {
+        reproduciendo = false;
+        btnPlay.disabled = false;
+        btnGenerar.disabled = false;
+        elStatus.textContent = "Listo. Podés volver a escuchar o revelar.";
+      }, totalMs);
+    }
+
+    function revelar() {
+      if (!dictadoActual.length) return;
+      const tonica = elTonica.value;
+      const tonicIdx = NOMBRES.indexOf(tonica);
+      const nombres = dictadoActual.map((g) => nombreAbsoluto(tonicIdx, g));
+      elRespuesta.className = "answer";
+      elRespuesta.textContent = nombres.join(" · ");
+    }
+
+    btnTonica.addEventListener("pointerdown", onTonicaDown);
+    btnTonica.addEventListener("pointerup", onTonicaUp);
+    btnTonica.addEventListener("pointerleave", onTonicaUp);
+    btnTonica.addEventListener("pointercancel", onTonicaUp);
+    window.addEventListener("pointerup", () => {
+      if (notaSostenida) soltarNotaSostenida();
+    });
+    btnGenerar.addEventListener("click", generarDictado);
+    btnPlay.addEventListener("click", reproducir);
+    btnRevelar.addEventListener("click", revelar);
+
+    initUI();
+  </script>
+</body>
+</html>

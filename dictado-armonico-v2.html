@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dictado armónico v2 — Do mayor</title>
+  <style>
+    :root {
+      --bg: #1a1f2e;
+      --panel: #242b3d;
+      --text: #e8ecf4;
+      --muted: #9aa3b5;
+      --accent: #3d9a7a;
+      --accent-hover: #4db892;
+      --border: #3a4258;
+      --oct-grave: #5b9fd4;
+      --oct-media: #3d9a7a;
+      --oct-aguda: #e0a04a;
+      --oct-grave-bg: rgba(91, 159, 212, 0.14);
+      --oct-media-bg: rgba(61, 154, 122, 0.14);
+      --oct-aguda-bg: rgba(224, 160, 74, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(ellipse at top, #2a3348 0%, var(--bg) 55%);
+      color: var(--text);
+      padding: 2rem 1.25rem 3rem;
+    }
+
+    .wrap {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 650;
+      margin: 0 0 0.35rem;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin: 0 0 1.75rem;
+      font-size: 0.95rem;
+    }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.35rem;
+      margin-bottom: 1rem;
+    }
+
+    label.field {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+
+    select, input[type="number"] {
+      width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.55rem 0.7rem;
+      font-size: 1rem;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 520px) {
+      .row { grid-template-columns: 1fr; }
+    }
+
+    .grados {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .grado-item {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.35rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.45rem 0.5rem 0.4rem;
+      min-width: 4.6rem;
+    }
+
+    .grado-item.oct-0 {
+      border-color: color-mix(in srgb, var(--oct-grave) 45%, var(--border));
+      background: var(--oct-grave-bg);
+    }
+    .grado-item.oct-1 {
+      border-color: color-mix(in srgb, var(--oct-media) 45%, var(--border));
+      background: var(--oct-media-bg);
+    }
+    .grado-item.oct-2 {
+      border-color: color-mix(in srgb, var(--oct-aguda) 45%, var(--border));
+      background: var(--oct-aguda-bg);
+    }
+
+    .grado-item:has(input:checked) {
+      box-shadow: inset 0 0 0 1px currentColor;
+    }
+    .grado-item.oct-0:has(input:checked) { color: var(--oct-grave); border-color: var(--oct-grave); }
+    .grado-item.oct-1:has(input:checked) { color: var(--oct-media); border-color: var(--oct-media); }
+    .grado-item.oct-2:has(input:checked) { color: var(--oct-aguda); border-color: var(--oct-aguda); }
+
+    .grado-item label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      cursor: pointer;
+      user-select: none;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .grado-item.oct-0 label { color: var(--oct-grave); }
+    .grado-item.oct-1 label { color: var(--oct-media); }
+    .grado-item.oct-2 label { color: var(--oct-aguda); }
+
+    .grados input { accent-color: currentColor; }
+
+    .octave-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.1rem;
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+    }
+    .octave-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .octave-legend i {
+      width: 0.7rem;
+      height: 0.7rem;
+      border-radius: 3px;
+      display: inline-block;
+    }
+    .octave-legend .leg-0 i { background: var(--oct-grave); }
+    .octave-legend .leg-1 i { background: var(--oct-media); }
+    .octave-legend .leg-2 i { background: var(--oct-aguda); }
+    .octave-legend .leg-0 { color: var(--oct-grave); }
+    .octave-legend .leg-1 { color: var(--oct-media); }
+    .octave-legend .leg-2 { color: var(--oct-aguda); }
+
+    .grado-meta {
+      display: block;
+      text-align: center;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-top: 0.1rem;
+    }
+
+    .grado-play {
+      padding: 0.25rem 0.4rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 6px;
+      line-height: 1.2;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 0.25rem;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 0.65rem 1.1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+    }
+
+    button:hover:not(:disabled) { background: var(--accent-hover); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    button.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    button.secondary:hover:not(:disabled) {
+      border-color: var(--muted);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .answer {
+      min-height: 3rem;
+      font-size: 1.5rem;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+    }
+
+    .answer.hidden {
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2rem;
+      padding: 0.2rem 0.55rem;
+      margin: 0 0.2rem 0.25rem 0;
+      border-radius: 8px;
+      font-weight: 700;
+    }
+    .chip.oct-0 {
+      color: var(--oct-grave);
+      background: var(--oct-grave-bg);
+      box-shadow: inset 0 0 0 1px var(--oct-grave);
+    }
+    .chip.oct-1 {
+      color: var(--oct-media);
+      background: var(--oct-media-bg);
+      box-shadow: inset 0 0 0 1px var(--oct-media);
+    }
+    .chip.oct-2 {
+      color: var(--oct-aguda);
+      background: var(--oct-aguda-bg);
+      box-shadow: inset 0 0 0 1px var(--oct-aguda);
+    }
+
+    .hint {
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .status {
+      color: var(--accent);
+      font-size: 0.9rem;
+      min-height: 1.25rem;
+    }
+
+    .tonalidad-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 0.6rem;
+    }
+
+    .tonalidad {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.55rem 0.85rem;
+      font-weight: 650;
+    }
+
+    .tonalidad span {
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+
+    .tonica-opts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      margin-top: 1rem;
+    }
+
+    .check-opt {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      cursor: pointer;
+      user-select: none;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    .check-opt input {
+      accent-color: var(--accent);
+      width: 1.05rem;
+      height: 1.05rem;
+    }
+
+    .fig-meta {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .respuesta-item {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+      margin: 0 0.35rem 0.35rem 0;
+      vertical-align: top;
+    }
+
+    .fig-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Dictado armónico v2</h1>
+    <p class="subtitle">Acordes en Do mayor · tríadas · figuras rítmicas · práctica auditiva</p>
+
+    <section>
+      <label class="field">Tonalidad</label>
+      <div class="tonalidad-row">
+        <div class="tonalidad">Do mayor <span>(fija en esta versión)</span></div>
+        <button id="btnDoMayor" class="secondary" type="button">Escuchar Do mayor</button>
+      </div>
+      <p class="hint">Referencia: acorde I (Do–Mi–Sol).</p>
+    </section>
+
+    <section>
+      <label class="field">Grados disponibles</label>
+      <div class="grados" id="grados"></div>
+      <div class="octave-legend">
+        <span class="leg-0"><i></i> Registro grave</span>
+        <span class="leg-1"><i></i> Registro medio</span>
+        <span class="leg-2"><i></i> Registro agudo</span>
+      </div>
+      <p class="hint">Tres registros de I–vii°. El color indica si es más grave o más agudo. ▶ Oír toca la tríada.</p>
+    </section>
+
+    <section>
+      <div class="row">
+        <div>
+          <label class="field" for="tempo">Tempo (BPM)</label>
+          <input id="tempo" type="number" min="40" max="200" value="70" />
+        </div>
+        <div>
+          <label class="field" for="cantidad">Cantidad de acordes</label>
+          <input id="cantidad" type="number" min="1" max="16" value="4" />
+        </div>
+      </div>
+
+      <div class="tonica-opts">
+        <label class="check-opt">
+          <input type="checkbox" id="empiezaTonica" />
+          Empezar con grado I
+        </label>
+        <label class="check-opt">
+          <input type="checkbox" id="terminaTonica" />
+          Terminar con grado I
+        </label>
+      </div>
+      <p class="hint">Para empezar o terminar con grado I, marcá al menos un <strong>I</strong> (en cualquier registro).</p>
+
+      <label class="field" style="margin-top: 1.1rem;">Figuras rítmicas</label>
+      <div class="tonica-opts" style="margin-top: 0.4rem;">
+        <label class="check-opt">
+          <input type="checkbox" id="figBlanca" value="blanca" />
+          Blanca <span class="fig-meta">(2 tiempos)</span>
+        </label>
+        <label class="check-opt">
+          <input type="checkbox" id="figNegra" value="negra" checked />
+          Negra <span class="fig-meta">(1 tiempo)</span>
+        </label>
+        <label class="check-opt">
+          <input type="checkbox" id="figCorchea" value="corchea" />
+          Corchea <span class="fig-meta">(½ tiempo)</span>
+        </label>
+      </div>
+      <p class="hint">El tempo define un tiempo (negra). Cada acorde del dictado usa una de las figuras marcadas.</p>
+    </section>
+
+    <section>
+      <div class="actions">
+        <button id="btnGenerar" type="button">Nuevo dictado</button>
+        <button id="btnPlay" class="secondary" type="button" disabled>Reproducir</button>
+        <button id="btnRevelar" class="secondary" type="button" disabled>Revelar</button>
+      </div>
+      <p class="status" id="status"></p>
+      <div class="answer hidden" id="respuesta">Generá un dictado para empezar.</div>
+    </section>
+  </div>
+
+  <script>
+    // Tríadas diatónicas en Do mayor (registro medio). Grave = −12, agudo = +12.
+    const BASE_ACORDES = [
+      { grado: 0, romano: "I",    nombre: "Do",  midis: [48, 52, 55] },
+      { grado: 1, romano: "ii",   nombre: "Re",  midis: [50, 53, 57] },
+      { grado: 2, romano: "iii",  nombre: "Mi",  midis: [52, 55, 59] },
+      { grado: 3, romano: "IV",   nombre: "Fa",  midis: [53, 57, 60] },
+      { grado: 4, romano: "V",    nombre: "Sol", midis: [55, 59, 62] },
+      { grado: 5, romano: "vi",   nombre: "La",  midis: [57, 60, 64] },
+      { grado: 6, romano: "vii°", nombre: "Si",  midis: [59, 62, 65] },
+    ];
+    const REGISTROS = [
+      { id: 0, label: "grave", shift: -12 },
+      { id: 1, label: "medio", shift: 0 },
+      { id: 2, label: "agudo", shift: 12 },
+    ];
+    const OCTAVA_MEDIA = 1;
+
+    const ACORDES = [];
+    REGISTROS.forEach((reg) => {
+      BASE_ACORDES.forEach((base) => {
+        ACORDES.push({
+          id: ACORDES.length,
+          grado: base.grado,
+          octava: reg.id,
+          romano: base.romano,
+          nombre: base.nombre,
+          midis: base.midis.map((m) => m + reg.shift),
+        });
+      });
+    });
+
+    const A4 = 440;
+    const MIDI_A4 = 69;
+
+    let audioCtx = null;
+    let masterGain = null;
+    let masterFilter = null;
+    const FIGURAS = {
+      blanca: { id: "blanca", label: "Blanca", beats: 2 },
+      negra: { id: "negra", label: "Negra", beats: 1 },
+      corchea: { id: "corchea", label: "Corchea", beats: 0.5 },
+    };
+
+    let dictadoActual = []; // { acordeId, figura }
+    let reproduciendo = false;
+
+    const elGrados = document.getElementById("grados");
+    const elTempo = document.getElementById("tempo");
+    const elCantidad = document.getElementById("cantidad");
+    const elEmpiezaTonica = document.getElementById("empiezaTonica");
+    const elTerminaTonica = document.getElementById("terminaTonica");
+    const elStatus = document.getElementById("status");
+    const elRespuesta = document.getElementById("respuesta");
+    const btnDoMayor = document.getElementById("btnDoMayor");
+    const btnGenerar = document.getElementById("btnGenerar");
+    const btnPlay = document.getElementById("btnPlay");
+    const btnRevelar = document.getElementById("btnRevelar");
+
+    function freqDeMidi(midi) {
+      return A4 * Math.pow(2, (midi - MIDI_A4) / 12);
+    }
+
+    function ensureAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = 0.55;
+        masterFilter = audioCtx.createBiquadFilter();
+        masterFilter.type = "lowpass";
+        masterFilter.frequency.value = 6500;
+        masterFilter.Q.value = 0.4;
+        masterGain.connect(masterFilter);
+        masterFilter.connect(audioCtx.destination);
+      }
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      return audioCtx;
+    }
+
+    function tocarNota(freq, when, dur, peak = 0.22) {
+      const ctx = ensureAudio();
+      const noteGain = ctx.createGain();
+      const noteFilter = ctx.createBiquadFilter();
+      noteFilter.type = "lowpass";
+      noteFilter.Q.value = 0.5;
+      noteFilter.connect(noteGain);
+      noteGain.connect(masterGain);
+
+      const attack = 0.02;
+      const ring = Math.max(dur * 1.8, 0.7);
+      const releaseEnd = when + ring;
+      const stopAt = releaseEnd + 0.03;
+
+      noteFilter.frequency.setValueAtTime(Math.min(freq * 12, 7000), when);
+      noteFilter.frequency.exponentialRampToValueAtTime(
+        Math.min(freq * 6, 4200),
+        when + ring * 0.6
+      );
+
+      noteGain.gain.setValueAtTime(0.0001, when);
+      noteGain.gain.linearRampToValueAtTime(peak, when + attack);
+      noteGain.gain.exponentialRampToValueAtTime(peak * 0.7, when + attack + 0.2);
+      noteGain.gain.exponentialRampToValueAtTime(0.0001, releaseEnd);
+
+      const parciales = [
+        [1, 0.9, "triangle"],
+        [2, 0.45, "sine"],
+        [3, 0.22, "sine"],
+        [4, 0.12, "sine"],
+        [5, 0.06, "sine"],
+      ];
+
+      parciales.forEach(([ratio, amp, type], i) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq * ratio;
+        const life = ring * Math.max(0.4, 1 - i * 0.08);
+        g.gain.setValueAtTime(0.0001, when);
+        g.gain.linearRampToValueAtTime(amp, when + attack);
+        g.gain.exponentialRampToValueAtTime(Math.max(amp * 0.5, 0.001), when + life * 0.5);
+        g.gain.exponentialRampToValueAtTime(0.0001, when + life);
+        osc.connect(g);
+        g.connect(noteFilter);
+        osc.start(when);
+        osc.stop(stopAt);
+      });
+    }
+
+    function tocarAcorde(acordeId, when, dur) {
+      const acorde = ACORDES[acordeId];
+      const peak = 0.2;
+      acorde.midis.forEach((midi) => {
+        tocarNota(freqDeMidi(midi), when, dur, peak);
+      });
+    }
+
+    function etiquetaAcorde(acorde) {
+      if (acorde.octava === 0) return acorde.romano + "ˌ";
+      if (acorde.octava === 2) return acorde.romano + "′";
+      return acorde.romano;
+    }
+
+    function initUI() {
+      ACORDES.forEach((acorde) => {
+        const item = document.createElement("div");
+        item.className = "grado-item oct-" + acorde.octava;
+
+        const lab = document.createElement("label");
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.value = String(acorde.id);
+        // Por defecto I, IV, V del registro medio
+        cb.checked =
+          acorde.octava === OCTAVA_MEDIA &&
+          (acorde.grado === 0 || acorde.grado === 3 || acorde.grado === 4);
+
+        const name = document.createElement("span");
+        name.textContent = etiquetaAcorde(acorde);
+
+        lab.appendChild(cb);
+        lab.appendChild(name);
+
+        const meta = document.createElement("span");
+        meta.className = "grado-meta";
+        meta.textContent = acorde.nombre;
+
+        const playBtn = document.createElement("button");
+        playBtn.type = "button";
+        playBtn.className = "secondary grado-play";
+        playBtn.textContent = "▶ Oír";
+        playBtn.title = "Escuchar " + etiquetaAcorde(acorde);
+        playBtn.addEventListener("click", () => {
+          const ctx = ensureAudio();
+          tocarAcorde(acorde.id, ctx.currentTime + 0.02, 1.2);
+        });
+
+        item.appendChild(lab);
+        item.appendChild(meta);
+        item.appendChild(playBtn);
+        elGrados.appendChild(item);
+      });
+    }
+
+    function gradosSeleccionados() {
+      return [...elGrados.querySelectorAll("input:checked")].map((cb) => Number(cb.value));
+    }
+
+    function figurasSeleccionadas() {
+      const ids = [];
+      if (document.getElementById("figBlanca").checked) ids.push("blanca");
+      if (document.getElementById("figNegra").checked) ids.push("negra");
+      if (document.getElementById("figCorchea").checked) ids.push("corchea");
+      return ids;
+    }
+
+    function elegirDe(lista) {
+      return lista[Math.floor(Math.random() * lista.length)];
+    }
+
+    function esTonica(acordeId) {
+      return ACORDES[acordeId].grado === 0; // I en cualquier registro
+    }
+
+    function generarDictado() {
+      const disponibles = gradosSeleccionados();
+      if (disponibles.length === 0) {
+        alert("Elegí al menos un grado (por ejemplo I, IV y V).");
+        return;
+      }
+
+      const figs = figurasSeleccionadas();
+      if (figs.length === 0) {
+        alert("Elegí al menos una figura rítmica (blanca, negra o corchea).");
+        return;
+      }
+
+      const empieza = elEmpiezaTonica.checked;
+      const termina = elTerminaTonica.checked;
+      const tonicasDisp = disponibles.filter(esTonica);
+
+      if ((empieza || termina) && tonicasDisp.length === 0) {
+        alert("Para empezar o terminar con grado I, marcá al menos un I.");
+        return;
+      }
+
+      const n = Math.max(1, Math.min(16, Number(elCantidad.value) || 4));
+      elCantidad.value = n;
+
+      dictadoActual = [];
+      for (let i = 0; i < n; i++) {
+        const forzarTonica =
+          (empieza && i === 0) ||
+          (termina && i === n - 1) ||
+          (n === 1 && (empieza || termina));
+
+        dictadoActual.push({
+          acordeId: forzarTonica ? elegirDe(tonicasDisp) : elegirDe(disponibles),
+          figura: elegirDe(figs),
+        });
+      }
+
+      const flags = [];
+      if (empieza) flags.push("empieza con grado I");
+      if (termina) flags.push("termina con grado I");
+      const figsTxt = figs.map((id) => FIGURAS[id].label.toLowerCase()).join("/");
+      const extra = flags.length ? ` · ${flags.join(" · ")}` : "";
+
+      elRespuesta.className = "answer hidden";
+      elRespuesta.textContent = "Dictado listo. Escuchá y después revelá la respuesta.";
+      elStatus.textContent = `${n} acordes · ${figsTxt} · Do mayor · ${elTempo.value} BPM${extra}`;
+      btnPlay.disabled = false;
+      btnRevelar.disabled = false;
+    }
+
+    function reproducir() {
+      if (!dictadoActual.length || reproduciendo) return;
+      reproduciendo = true;
+      btnPlay.disabled = true;
+      btnGenerar.disabled = true;
+
+      const bpm = Math.max(40, Math.min(200, Number(elTempo.value) || 70));
+      elTempo.value = bpm;
+      const beat = 60 / bpm;
+      const ctx = ensureAudio();
+      const t0 = ctx.currentTime + 0.08;
+
+      let cursor = 0;
+      dictadoActual.forEach((item) => {
+        const dur = beat * FIGURAS[item.figura].beats;
+        tocarAcorde(item.acordeId, t0 + cursor, dur * 0.92);
+        cursor += dur;
+      });
+
+      const totalMs = (cursor + 0.15) * 1000;
+      elStatus.textContent = "Reproduciendo…";
+      setTimeout(() => {
+        reproduciendo = false;
+        btnPlay.disabled = false;
+        btnGenerar.disabled = false;
+        elStatus.textContent = "Listo. Podés volver a escuchar o revelar.";
+      }, totalMs);
+    }
+
+    function revelar() {
+      if (!dictadoActual.length) return;
+      elRespuesta.className = "answer";
+      elRespuesta.replaceChildren();
+      dictadoActual.forEach((item) => {
+        const acorde = ACORDES[item.acordeId];
+        const wrap = document.createElement("span");
+        wrap.className = "respuesta-item";
+
+        const chip = document.createElement("span");
+        chip.className = "chip oct-" + acorde.octava;
+        chip.textContent = etiquetaAcorde(acorde);
+
+        const fig = document.createElement("span");
+        fig.className = "fig-label";
+        fig.textContent = FIGURAS[item.figura].label;
+
+        wrap.appendChild(chip);
+        wrap.appendChild(fig);
+        elRespuesta.appendChild(wrap);
+      });
+    }
+
+    btnDoMayor.addEventListener("click", () => {
+      const ctx = ensureAudio();
+      // I del registro medio
+      const idMedio = OCTAVA_MEDIA * 7;
+      tocarAcorde(idMedio, ctx.currentTime + 0.02, 1.4);
+    });
+    btnGenerar.addEventListener("click", generarDictado);
+    btnPlay.addEventListener("click", reproducir);
+    btnRevelar.addEventListener("click", revelar);
+
+    initUI();
+  </script>
+</body>
+</html>
